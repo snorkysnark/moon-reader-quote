@@ -1,5 +1,8 @@
 from dataclasses import dataclass
 from typing import TextIO
+import re
+
+BR_REGEX = re.compile("(<BR>)+")
 
 
 @dataclass
@@ -16,7 +19,7 @@ def parse(file: TextIO) -> list[MrExptQuote]:
         lines = chunk.splitlines()
 
         mr_id = lines[0]
-        quote = lines[12].replace("<BR>", "\n")
+        quote = BR_REGEX.sub(" ", lines[12])
         results.append(MrExptQuote(mr_id, quote))
 
     return results

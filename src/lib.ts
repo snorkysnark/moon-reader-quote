@@ -1,5 +1,7 @@
 export { EpubCFI } from "epubjs";
 
+const WHITESPACE_REGEX = RegExp(/^[\n\s]*$/);
+
 export class TaggedText {
     nodePositions: Map<number, Node>;
     plainText: string;
@@ -7,6 +9,8 @@ export class TaggedText {
     constructor(root?: Node) {
         let plainText = "";
         let nodePositions = new Map<number, Node>();
+        let isFirst = true;
+        let lastWasWhitespace = false;
 
         let walker = document.createTreeWalker(
             root || document.body,
@@ -17,9 +21,27 @@ export class TaggedText {
             let node = walker.currentNode;
             if (!node.textContent) continue;
 
-            nodePositions.set(plainText.length, node);
-            plainText += node.textContent;
+            if (WHITESPACE_REGEX.test(node.textContent)) {
+                if (!lastWasWhitespace) {
+                    lastWasWhitespace = true;
+
+                    if (!isFirst) {
+                        // Don't put a separator at the beginning
+                        plainText += " ";
+                    }
+                }
+            } else {
+                lastWasWhitespace = false;
+                nodePositions.set(plainText.length, node);
+                plainText += node.textContent;
+            }
+            isFirst = false;
         }
+        if (lastWasWhitespace) {
+            // Remove a separator from the end
+            plainText = plainText.slice(0, -1);
+        }
+
         this.plainText = plainText;
         this.nodePositions = nodePositions;
     }
@@ -61,6 +83,6 @@ export function selectRange(range: Range, target_window?: Window) {
     target_window = target_window || window;
 
     let sel = target_window.getSelection()!;
-    sel?.removeAllRanges()
+    sel?.removeAllRanges();
     sel.addRange(range);
 }

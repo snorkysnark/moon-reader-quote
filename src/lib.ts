@@ -1,4 +1,6 @@
-class TaggedText {
+export { EpubCFI } from "epubjs";
+
+export class TaggedText {
     nodePositions: Map<number, Node>;
     plainText: string;
 
@@ -18,7 +20,7 @@ class TaggedText {
             nodePositions.set(plainText.length, node);
             plainText += node.textContent;
         }
-this.plainText = plainText;
+        this.plainText = plainText;
         this.nodePositions = nodePositions;
     }
 
@@ -55,4 +57,10 @@ this.plainText = plainText;
     }
 }
 
-export default TaggedText;
+export function selectRange(range: Range, target_window?: Window) {
+    target_window = target_window || window;
+
+    let sel = target_window.getSelection()!;
+    sel?.removeAllRanges()
+    sel.addRange(range);
+}

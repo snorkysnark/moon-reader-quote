@@ -1,8 +1,7 @@
 from multiprocessing import Process
-from typing import Optional, overload
 from dataclasses import dataclass
+import atexit
 
-import flask
 from flask import Flask
 from ebooklib.epub import EpubBook
 from selenium.webdriver import Chrome
@@ -51,6 +50,7 @@ class BookServer:
 
         server = Process(target=app.run, args=(None, port))
         server.start()
+        atexit.register(server.kill) # Kill flask when this process dies
 
         self.server = server
         self.browser = Chrome()

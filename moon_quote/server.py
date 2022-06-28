@@ -33,6 +33,8 @@ def fuzzyfind(
 
 @dataclass
 class SearchResult:
+    offset_from: int
+    offset_to: int
     text: str
     cfi: str
     distance: int
@@ -88,6 +90,11 @@ class BookServer:
             f"moonQuote.selectRange(taggedText.construcRange({offset_from}, {offset_to}))"
         )
 
+    def select_match(self, match: SearchResult):
+        return self.browser.execute_script(
+            f"moonQuote.selectRange(taggedText.construcRange({match.offset_from}, {match.offset_to}))"
+        )
+
     def cfi_from_range(self, offset_from: int, offset_to: int) -> str:
         cfi_parts = self.browser.execute_script(
             f"""return new moonQuote.EpubCFI(
@@ -105,6 +112,8 @@ class BookServer:
                 text=match.matched,
                 cfi=self.cfi_from_range(match.start, match.end),
                 distance=match.dist,
+                offset_from=match.start,
+                offset_to=match.end,
             )
 
         return list(map(to_search_result, matches))

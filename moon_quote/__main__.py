@@ -15,6 +15,7 @@ from . import get_chapter_list, parse_mrexpt, BookServer, MrExptQuote, Chapter
 class FoundQuote:
     chapter_id: str
     chapter_name: Optional[str]
+    chapter_order: int
     text: str
     distance: int
     cfi: str
@@ -62,6 +63,7 @@ def find_quotes(
                     FoundQuote(
                         chapter_id=chapter.id,
                         chapter_name=chapter.name,
+                        chapter_order=chapter.order,
                         text=match.text,
                         distance=match.distance,
                         cfi=match.cfi,

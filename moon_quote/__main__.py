@@ -2,20 +2,20 @@ from argparse import ArgumentParser
 from dataclasses import dataclass
 import json
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 from dataclasses_json.api import dataclass_json
 
 from ebooklib import epub
 
-from . import get_chapter_list, parse_mrexpt, BookServer, MrExptQuote, Chapter
+from . import get_document_list, Document, parse_mrexpt, BookServer, MrExptQuote
 
 
 @dataclass_json
 @dataclass
 class FoundQuote:
     chapter_id: str
-    chapter_name: Optional[str]
     chapter_order: int
+    toc_parent: Optional[str]
     text: str
     distance: int
     cfi: str
@@ -26,6 +26,9 @@ class FoundQuote:
 class QuoteMatches:
     original: str
     found: list[FoundQuote]
+
+
+SpineItem = Tuple[str, str]
 
 
 def parse_args():
@@ -42,7 +45,7 @@ def parse_args():
 
 def find_quotes(
     server: BookServer,
-    chapters: list[Chapter],
+    documents: list[Document],
     quotes: list[MrExptQuote],
     max_distance: int,
 ):
@@ -53,17 +56,17 @@ def find_quotes(
         quote_results[quote_item.mr_id] = QuoteMatches(quote_item.quote, [])
 
     # Search in all chapters
-    for chapter in chapters:
-        server.open_chapter_object(chapter)
+    for document in documents:
+        server.open_document_object(document)
 
         for quote_item in quotes:
             for match in server.fuzzyfind(quote_item.quote, max_distance):
                 print(match)
                 quote_results[quote_item.mr_id].found.append(
                     FoundQuote(
-                        chapter_id=chapter.id,
-                        chapter_name=chapter.name,
-                        chapter_order=chapter.order,
+                        chapter_id=document.id,
+                        chapter_order=document.order,
+                        toc_parent=document.toc_parent,
                         text=match.text,
                         distance=match.distance,
                         cfi=match.cfi,
@@ -81,7 +84,7 @@ def main():
     args = parse_args()
 
     book = epub.read_epub(args.book)
-    chapters = get_chapter_list(book)
+    documents = get_document_list(book)
 
     with args.quotes.open() as file:
         quotes = parse_mrexpt(file)
@@ -89,7 +92,7 @@ def main():
     with BookServer(book) as server:
         results = find_quotes(
             server=server,
-            chapters=chapters,
+            documents=documents,
             quotes=quotes,
             max_distance=args.max_distance,
         )

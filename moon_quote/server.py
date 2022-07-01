@@ -7,7 +7,7 @@ from ebooklib.epub import EpubBook
 from selenium.webdriver import Chrome
 import fuzzysearch
 
-from moon_quote.book import Chapter
+from moon_quote.book import Document
 
 
 CUTOFF_FRACTION = 4
@@ -28,7 +28,9 @@ def fuzzyfind(
 ) -> list[fuzzysearch.Match]:
     distance = min(round(len(subsequence) / CUTOFF_FRACTION), max_distance)
 
-    return fuzzysearch.find_near_matches(subsequence, sequence, max_l_dist=distance)
+    return list(
+        fuzzysearch.find_near_matches(subsequence, sequence, max_l_dist=distance)
+    )
 
 
 @dataclass
@@ -52,7 +54,7 @@ class BookServer:
 
         server = Process(target=app.run, args=(None, port))
         server.start()
-        atexit.register(server.kill) # Kill flask when this process dies
+        atexit.register(server.kill)  # Kill flask when this process dies
 
         self.server = server
         self.browser = Chrome()
@@ -69,7 +71,7 @@ class BookServer:
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self.close()
 
-    def open_chapter(self, spine_id: str, efi_path: str = ""):
+    def open_document(self, spine_id: str, efi_path: str = ""):
         self.chapter_path = efi_path
 
         self.browser.get(f"{self.base_url}/book/{spine_id}")
@@ -78,9 +80,9 @@ class BookServer:
             taggedText = new moonQuote.TaggedText()"""
         )
 
-    def open_chapter_object(self, chapter: Chapter):
-        efi_path = "6/{}".format((chapter.order + 1) * 2)
-        self.open_chapter(chapter.id, efi_path)
+    def open_document_object(self, document: Document):
+        efi_path = "6/{}".format((document.order + 1) * 2)
+        self.open_document(document.id, efi_path)
 
     def get_plain_text(self):
         return self.browser.execute_script("return taggedText.plainText")
